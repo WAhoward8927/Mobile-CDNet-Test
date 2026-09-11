@@ -128,7 +128,7 @@ def score_from_cm(cm):
     oa = (tp + tn) / (total + eps)
     pe = ((tp + fn) * (tp + fp) + (tn + fp) * (tn + fn)) / (total**2)
     kappa = (oa - pe) / (1 - pe + eps)
-    return {"Kappa": kappa, "IoU": iou, "F1": f1, "recall": recall, "precision": precision}
+    return {"Kappa": float(kappa), "IoU": float(iou), "F1": float(f1), "recall": float(recall), "precision": float(precision)}
 
 
 def train_one_epoch(args, loader, model, ema_model, optimizer, scaler, epoch, global_step):
@@ -183,7 +183,7 @@ def evaluate(loader, model, threshold=0.5):
 @torch.no_grad()
 def calibrate_threshold(loader, model, thresholds):
     model.eval()
-    cms = np.zeros((len(threshlds), 4), dtype=np.int64)
+    cms = np.zeros((len(thresholds), 4), dtype=np.int64)
     for images, targets in loader:
         pre = images[:, :3].cuda(non_blocking=True).float()
         post = images[:, 3:6].cuda(non_blocking=True).float()
@@ -192,7 +192,7 @@ def calibrate_threshold(loader, model, thresholds):
         for index, threshold in enumerate(thresholds):
             pred = probs > threshold
             tp = np.count_nonzero(pred & gt)
-            fp = np.count_nonzero(pred & ~kgt)
+            fp = np.count_nonzero(pred & ~gt)
             fn = np.count_nonzero(~pred & gt)
             tn = pred.size - tp - fp - fn
             cms[index] += np.array([tn, fp, fn, tp], dtype=np.int64)
